@@ -459,6 +459,22 @@ body[data-vista="wizard"] #mapa{opacity:.7}
 .t-pie .t-monto{flex:1 1 auto}
 .dash-h h2,.dash-h p{text-shadow:0 2px 24px rgba(4,6,26,.55)}
 
+/* Pantallas bajas de escritorio (portátiles, 1280x720) */
+@media (min-width:1000px) and (max-height:820px){
+  #vHero.on{padding-top:74px;padding-bottom:18px}
+  .hero-card{padding:30px 40px 26px;max-width:620px}
+  h1{font-size:clamp(40px,7.4vh,56px)}
+  .ceja{margin-bottom:10px}
+  .hero-sub{font-size:15px;margin-top:12px}
+  .hero-acc{margin-top:18px}
+  .hero-stats{margin-top:16px}
+  .hstat{padding:9px 12px 8px}
+}
+@media (min-width:1000px){
+  body[data-vista="hero"] #demoTxt{left:auto;right:5vw;transform:translate(0,20px);max-width:38vw;bottom:9vh}
+  body[data-vista="hero"] #demoTxt.on{transform:none}
+}
+
 </style>
 </head>
 <body>
@@ -1238,11 +1254,15 @@ function pintarRubros(){
   }).join('');
 }
 function pintarRegiones(){
-  var pr=(R().por_region||[]).slice().sort(function(a,b){return b.n-a.n;}).slice(0,9);
-  $('#gRegiones').innerHTML='<button type="button" class="chip-b" data-reg="" aria-pressed="'+(S.region==='')+'">Todo el país</button>'+pr.map(function(x){return '<button type="button" class="chip-b" data-reg="'+esc(x.region)+'" aria-pressed="'+(S.region===x.region)+'">'+esc(nomRegion(x.region))+'<small>'+fmtNum(x.n)+'</small></button>';}).join('');
+  var todas=(R().por_region||[]).slice().sort(function(a,b){return b.n-a.n;}),pr=todas.slice(0,9),cap=regionCapital();
+  if(cap&&!pr.some(function(x){return x.region===cap;})){var xc=todas.filter(function(x){return x.region===cap;})[0];pr.pop();pr.unshift(xc||{region:cap,n:0});}
+  else if(cap){pr.sort(function(a,b){return (b.region===cap)-(a.region===cap);});}
+  $('#gRegiones').innerHTML='<button type="button" class="chip-b" data-reg="" aria-pressed="'+(S.region==='')+'">Todo el país</button>'+pr.map(function(x){return '<button type="button" class="chip-b" data-reg="'+esc(x.region)+'" aria-pressed="'+(S.region===x.region)+'">'+esc(nomRegion(x.region))+(x.n?'<small>'+fmtNum(x.n)+'</small>':'')+'</button>';}).join('');
   var regs=(P().regiones||[]).slice();
   $('#selRegion').innerHTML='<option value="__">Otra región…</option>'+regs.map(function(r){return '<option value="'+esc(r)+'"'+(S.region===r?' selected':'')+'>'+esc(nomRegion(r))+'</option>';}).join('');
 }
+var CAPITAL={CO:/bogot/i,CL:/metropolitana/i,PE:/^lima/i,MX:/ciudad de m/i,EC:/pichincha/i};
+function regionCapital(){var re=CAPITAL[S.pais];return re?((P().regiones||[]).filter(function(r){return re.test(r);})[0]||null):null;}
 function vDeX(x){var v=VENTAS[S.pais],raw=v.min*Math.pow(v.max/v.min,x/1000),m=Math.pow(10,Math.floor(Math.log10(raw))-1);return Math.round(raw/m)*m;}
 function xDeV(val){var v=VENTAS[S.pais];return Math.round(1000*Math.log(val/v.min)/Math.log(v.max/v.min));}
 function pintarVentas(){
@@ -1487,20 +1507,19 @@ function demo(){
   var pais=D.CO?'CO':Object.keys(D)[0],c=$('#cursor');
   S.pais=null;S.rubro=null;S.region=null;S.proc=null;S.checks={};S.orden='calce';S.n=9;S.vistaMapa='compradores';S.grupo=null;
   ver('hero');c.style.transform='translate3d('+(window.innerWidth*.7)+'px,'+(window.innerHeight*.8)+'px,0)';
-  var reg=(D[pais].regiones||[]).filter(function(r){return /bogot/i.test(r);})[0];
   texto('El Estado te está convocando <em>y no te enteraste.</em>');
-  espera(4300).then(function(){texto('Dinos qué vende tu pyme y dónde está.');return clicEn('#bEmpezar');})
+  espera(3700).then(function(){texto('Dinos qué vende tu pyme y dónde está.');return clicEn('#bEmpezar');})
   .then(function(){return espera(500);}).then(function(){return clicEn('.pais[data-p="'+pais+'"]',800);})
   .then(function(){return espera(900);}).then(function(){return clicEn('.rubro[data-r="aseo"]',900);})
-  .then(function(){return espera(700);}).then(function(){var b=reg?$$('#gRegiones .chip-b').filter(function(x){return x.getAttribute('data-reg')===reg;})[0]:null;return clicEn(b||$$('#gRegiones .chip-b')[1],900);})
+  .then(function(){return espera(700);}).then(function(){var reg=regionCapital(),b=reg?$$('#gRegiones .chip-b').filter(function(x){return x.getAttribute('data-reg')===reg;})[0]:null;return clicEn(b||$$('#gRegiones .chip-b')[1],900);})
   .then(function(){return espera(600);}).then(function(){var b=$$('#gVentas .chip-b')[1];return clicEn(b,800);})
   .then(function(){return espera(500);}).then(function(){return clicEn('#bVer',700);})
-  .then(function(){texto('Tu <em>radar</em>: procesos reales, ordenados por calce, plata y plazo.');c.classList.remove('on');return espera(3400);})
-  .then(function(){window.scrollTo({top:Math.max(0,$('#p-radar').getBoundingClientRect().top+window.scrollY-150),behavior:'smooth'});return espera(2600);})
+  .then(function(){texto('Tu <em>radar</em>: procesos reales, ordenados por calce, plata y plazo.');c.classList.remove('on');return espera(2900);})
+  .then(function(){window.scrollTo({top:Math.max(0,$('#p-radar').getBoundingClientRect().top+window.scrollY-150),behavior:'smooth'});return espera(2300);})
   .then(function(){texto('El <em>mapa del dinero</em>: quién compra lo tuyo y a quién le compra hoy.');return clicEn('#tabs [data-t="mapa"]',700);})
   .then(function(){window.scrollTo({top:0,behavior:'smooth'});return espera(1700);}).then(function(){var e=$('#lista .ent');if(e){enfocarEntidad(0,true);}return espera(3300);})
   .then(function(){texto('<em>¿Me alcanza?</em> Un semáforo según el tamaño de tu empresa.');return clicEn('#tabs [data-t="alcanza"]',700);})
-  .then(function(){return espera(3600);})
+  .then(function(){return espera(3100);})
   .then(function(){texto('Y un <em>plan de 14 días</em> para presentarte, paso a paso.');return clicEn('#tabs [data-t="plan"]',700);})
   .then(function(){return espera(900);}).then(function(){return clicEn('#plan .dia[data-d="1"]',600);}).then(function(){return clicEn('#plan .dia[data-d="2"]',500);})
   .then(function(){return espera(1300);})
